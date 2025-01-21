@@ -2,6 +2,14 @@ import { Command, CommandRunner, Option } from 'nest-commander';
 import puppeteer from 'puppeteer';
 import delay from 'src/utils/delay';
 import * as fs from 'fs';
+import {
+  loginButton,
+  oldPrice,
+  price,
+  rating,
+  reviews,
+} from './ConstSelectors/Vprok.const';
+import random from 'src/utils/random';
 
 interface ProductCommandOptions {
   url: string;
@@ -57,15 +65,15 @@ export class VprokCommand extends CommandRunner {
     const browser = await puppeteer.launch({
       headless: true,
       args: [
-        '--no-sandbox', // Обход ограничений безопасности (в некоторых случаях нужно для запуска в Docker)
+        '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-infobars', // Отключить информационные панели
-        '--disable-web-security', // Отключить веб-безопасность
-        '--disable-features=IsolateOrigins,site-per-process', // Выключить дополнительные фичи изолированного контента
+        '--disable-infobars',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
       ],
     });
-    const page = await browser.newPage();
     try {
+      const page = await browser.newPage();
       const userAgent = await page.evaluate(() => navigator.userAgent);
       console.log(userAgent);
       await page
@@ -79,33 +87,27 @@ export class VprokCommand extends CommandRunner {
           console.log('goto: ', res);
         });
       //secs
-      delay(10).then(async () => {
+      delay(5).then(async () => {
         console.log('Delay passed');
         //Эмулирую активность
-        await page.mouse.move(100, 100);
+        await page.mouse.move(random(), random());
         await page.mouse.down();
         await page.mouse.up();
-        await page.mouse.move(300, 300);
+        await page.mouse.move(random(), random());
+        await page.click(loginButton);
         const html = await page.content();
         fs.writeFileSync(`${folder}/page.html`, html, 'utf-8');
         const productData = await page.evaluate(() => {
           const data: Record<string, string | null> = {};
 
           data.price =
-            document
-              .querySelector('.product-price-class')
-              ?.textContent?.trim() || null;
+            document.querySelector(price)?.textContent?.trim() || null;
           data.oldPrice =
-            document.querySelector('.old-price-class')?.textContent?.trim() ||
-            null;
+            document.querySelector(oldPrice)?.textContent?.trim() || null;
           data.rating =
-            document
-              .querySelector('.product-rating-class')
-              ?.textContent?.trim() || null;
+            document.querySelector(rating)?.textContent?.trim() || null;
           data.reviews =
-            document
-              .querySelector('.product-reviews-class')
-              ?.textContent?.trim() || null;
+            document.querySelector(reviews)?.textContent?.trim() || null;
 
           return data;
         });
