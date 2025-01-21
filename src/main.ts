@@ -18,11 +18,9 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document, getSwaggerCustomOptions());
   app.enableCors();
   await app.listen('3000', '0.0.0.0');
-
   console.log(`Server started: ${await app.getUrl()}/api`);
 }
 async function bootstrapCli() {
-  console.log('STARTING MODE'.bgYellow, node);
   const app = await CommandFactory.createWithoutRunning(AppModule, [
     'warn',
     'error',
