@@ -3,6 +3,9 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import 'colors';
 import { getSwaggerCustomOptions, getSwaggerOptions } from './utils/swagger';
+import { CommandFactory } from 'nest-commander';
+
+export const node = process.env.NODE_ENV;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,4 +21,16 @@ async function bootstrap() {
 
   console.log(`Server started: ${await app.getUrl()}/api`);
 }
-bootstrap();
+async function bootstrapCli() {
+  console.log('STARTING MODE'.bgYellow, node);
+  const app = await CommandFactory.createWithoutRunning(AppModule, [
+    'warn',
+    'error',
+  ]);
+  await CommandFactory.runApplication(app);
+}
+if (node === 'CLI') {
+  bootstrapCli();
+} else {
+  bootstrap();
+}

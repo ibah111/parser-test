@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import ModuleModules from './Modules/Modules.module';
 import { PagesModule } from './Pages/Pages.module';
+import { CommanderModule } from './Commander/Commander.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { PagesModule } from './Pages/Pages.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    CommanderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
