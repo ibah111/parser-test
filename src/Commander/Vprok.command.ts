@@ -2,13 +2,6 @@ import { Command, CommandRunner, Option } from 'nest-commander';
 import puppeteer from 'puppeteer';
 import delay from 'src/utils/delay';
 import * as fs from 'fs';
-import {
-  loginButton,
-  oldPrice,
-  price,
-  rating,
-  reviews,
-} from './ConstSelectors/Vprok.const';
 import random from 'src/utils/random';
 
 interface ProductCommandOptions {
@@ -38,14 +31,12 @@ export class VprokCommand extends CommandRunner {
 
   async run(passedParams: string[], options: ProductCommandOptions) {
     console.log('Vprok command run. Passed params', passedParams);
-    const { url, region } = options;
-    if (!url || !region) {
-      options = {
-        url: 'https://www.vprok.ru/product/domik-v-derevne-dom-v-der-moloko-ster-3-2-950g--309202',
-        region: 'Санкт-Петербург',
-      };
-    }
-    console.log(options);
+
+    const url =
+      'https://www.vprok.ru/product/picnic-picnic-batonchik-big-76g--311996';
+    // const url =
+    //   'https://www.vprok.ru/product/domik-v-derevne-dom-v-der-moloko-ster-3-2-950g--309202';
+    const region = 'Санкт-Петербург';
     this.checkFolder().then(async () => await this.parse({ url, region }));
   }
 
@@ -65,70 +56,77 @@ export class VprokCommand extends CommandRunner {
     const browser = await puppeteer.launch({
       headless: true,
       args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-infobars',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
+        '--disable-infobars', // Отключить информационные панели
+        '--disable-web-security', // Отключить веб-безопасность
+        '--disable-features=IsolateOrigins,site-per-process', // Выключить дополнительные фичи изолированного контента
       ],
     });
-    try {
-      const page = await browser.newPage();
-      const userAgent = await page.evaluate(() => navigator.userAgent);
-      console.log(userAgent);
-      await page
-        .goto(
-          'https://www.vprok.ru/product/domik-v-derevne-dom-v-der-moloko-ster-3-2-950g--309202',
-          {
-            waitUntil: 'load',
-          },
-        )
-        .then((res) => {
-          console.log('goto: ', res);
+    const page = await browser.newPage();
+    await page.goto(url, {
+      waitUntil: 'domcontentloaded',
+      timeout: 5000,
+    });
+
+    if (page) {
+      try {
+        //secs
+        delay(5).then(async () => {
+          console.log('Delay passed');
+          //Эмулирую активность
+          await page.mouse.move(random(), random());
+          await page.mouse.down();
+          await page.mouse.up();
+          await page.mouse.move(random(), random());
+
+          const productData = await page.evaluate(() => {
+            const data: Record<string, string | null> = {};
+
+            data.price =
+              document.querySelector(
+                '#__next > div.FeatureAppLayoutBase_layout__0HSBo.FeatureAppLayoutBase_hideBannerMobile__97CUm.FeatureAppLayoutBase_hideBannerTablet__dCMoJ.FeatureAppLayoutBase_hideBannerDesktop__gPdf1 > main > div:nth-child(3) > div > div.ProductPage_informationBlock__vDYCH > div.ProductPage_desktopBuy__cyRrC > div > div > div > div.PriceInfo_root__GX9Xp > span',
+              )?.textContent || null;
+            data.oldPrice =
+              document.querySelector(
+                '#__next > div.FeatureAppLayoutBase_layout__0HSBo.FeatureAppLayoutBase_hideBannerMobile__97CUm.FeatureAppLayoutBase_hideBannerTablet__dCMoJ.FeatureAppLayoutBase_hideBannerDesktop__gPdf1 > main > div:nth-child(3) > div > div.ProductPage_informationBlock__vDYCH > div.ProductPage_desktopBuy__cyRrC > div > div > div > div.PriceInfo_root__GX9Xp > div > span.Price_price__QzA8L.Price_size_XS__ESEhJ.Price_role_old__r1uT1',
+              )?.textContent || null;
+            data.rating =
+              document.querySelector(
+                '#__next > div.FeatureAppLayoutBase_layout__0HSBo.FeatureAppLayoutBase_hideBannerMobile__97CUm.FeatureAppLayoutBase_hideBannerTablet__dCMoJ.FeatureAppLayoutBase_hideBannerDesktop__gPdf1 > main > div:nth-child(3) > div > div.ProductPage_aboutAndReviews__47Wwu > div.DetailsAndReviews_root__ghQFz > section.Summary_section__n5aJB > div:nth-child(6) > div > div.Summary_title__lRoWU',
+              )?.textContent || null;
+            data.reviews =
+              document.querySelector(
+                '#__next > div.FeatureAppLayoutBase_layout__0HSBo.FeatureAppLayoutBase_hideBannerMobile__97CUm.FeatureAppLayoutBase_hideBannerTablet__dCMoJ.FeatureAppLayoutBase_hideBannerDesktop__gPdf1 > main > div:nth-child(3) > div > div.ProductPage_aboutAndReviews__47Wwu > div.DetailsAndReviews_root__ghQFz > section.Summary_section__n5aJB > div.Summary_reviewsContainer__qTWIu.Summary_reviewsCountContainer___aY6I > div > div',
+              )?.textContent || null;
+
+            return data;
+          });
+
+          const productText = `
+          Цена: ${productData.price || 'Не указана'}\n
+          Старая цена: ${productData.oldPrice || 'Не указана'}\n
+          Рейтинг: ${productData.rating || 'Не указан'}\n
+          Количество отзывов: ${productData.reviews || 'Не указано'}\n
+          `;
+
+          fs.writeFileSync(folder + '/product.txt', productText.trim());
+
+          await page.click(
+            '#__next > div.Modal_root__kPoVQ.Modal_open__PaUmT > div > div > div.Content_root__7DKIP.Content_modal__gAOHB > button > svg > path',
+          );
+          delay(3).then(async () => {
+            const html = await page.content();
+            fs.writeFileSync(`${folder}/page.html`, html, 'utf-8');
+            await page
+              .screenshot({
+                path: `${folder}/screenshot.jpg`,
+                fullPage: true,
+              })
+              .then(() => console.log('Данные успешно сохранены!'.green));
+          });
         });
-      //secs
-      delay(5).then(async () => {
-        console.log('Delay passed');
-        //Эмулирую активность
-        await page.mouse.move(random(), random());
-        await page.mouse.down();
-        await page.mouse.up();
-        await page.mouse.move(random(), random());
-        await page.click(loginButton);
-        const html = await page.content();
-        fs.writeFileSync(`${folder}/page.html`, html, 'utf-8');
-        const productData = await page.evaluate(() => {
-          const data: Record<string, string | null> = {};
-
-          data.price =
-            document.querySelector(price)?.textContent?.trim() || null;
-          data.oldPrice =
-            document.querySelector(oldPrice)?.textContent?.trim() || null;
-          data.rating =
-            document.querySelector(rating)?.textContent?.trim() || null;
-          data.reviews =
-            document.querySelector(reviews)?.textContent?.trim() || null;
-
-          return data;
-        });
-        await page.screenshot({
-          path: `${folder}/screenshot.jpg`,
-          fullPage: true,
-        });
-
-        // Сохранение данных
-        const productText = `
-      Цена: ${productData.price || 'Не указана'}
-      Старая цена: ${productData.oldPrice || 'Не указана'}
-      Рейтинг: ${productData.rating || 'Не указан'}
-      Количество отзывов: ${productData.reviews || 'Не указано'}
-      `;
-        fs.writeFileSync(folder + '/product.txt', productText.trim());
-
-        console.log('Данные успешно сохранены!');
-      });
-    } catch (error) {
-      console.log(error);
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 }
