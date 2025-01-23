@@ -40,10 +40,26 @@ export default class KatalogCommand extends CommandRunner {
           return script?.textContent ? script.textContent : null;
         });
         const parsed_json = JSON.parse(json as string);
-        console.log(
-          'json'.yellow,
-          parsed_json.props.pageProps.initialStore.catalogPage.products,
-        );
+        const products_collection =
+          parsed_json.props.pageProps.initialStore.catalogPage.products.map(
+            (item) => {
+              const images_url = item.images
+                .map((item) => item.url)[0]
+                .replace('<SIZE>', 'x155');
+              return {
+                url: item.url,
+                name: item.name,
+                images: images_url,
+                rating: item.rating,
+                reviews: item.reviews,
+                price: item.price,
+                oldPrice: item.oldPrice,
+                discount: item.discount,
+                discontPrice: item.discontPrice,
+              };
+            },
+          );
+        console.log('json'.yellow, products_collection);
         //const products = json.props.pageProps.initialStore.catalogPage.products;
         console.log;
         if (!json) {
