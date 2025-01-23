@@ -54,7 +54,8 @@ export class VprokCommand extends CommandRunner {
   async parse({ url, region }: ProductCommandOptions) {
     const folder = await this.checkFolder();
     const browser = await puppeteer.launch({
-      headless: true,
+      slowMo: 1000,
+      headless: false,
       args: [
         '--disable-infobars', // Отключить информационные панели
         '--disable-web-security', // Отключить веб-безопасность
@@ -112,7 +113,11 @@ export class VprokCommand extends CommandRunner {
 
           await page.click(
             '#__next > div.Modal_root__kPoVQ.Modal_open__PaUmT > div > div > div.Content_root__7DKIP.Content_modal__gAOHB > button > svg > path',
+            {
+              delay: 1000,
+            },
           );
+
           delay(3).then(async () => {
             const html = await page.content();
             fs.writeFileSync(`${folder}/page.html`, html, 'utf-8');
@@ -121,7 +126,10 @@ export class VprokCommand extends CommandRunner {
                 path: `${folder}/screenshot.jpg`,
                 fullPage: true,
               })
-              .then(() => console.log('Данные успешно сохранены!'.green));
+              .then(() => {
+                console.log('Данные успешно сохранены!'.green);
+                // process.exit(0);
+              });
           });
         });
       } catch (error) {
