@@ -80,7 +80,6 @@ export class VprokCommand extends CommandRunner {
   }
 
   async parse({ url, name, folder }: ProductCommandOptions) {
-    console.log(url, name, folder);
     const browser = await puppeteer.launch({
       slowMo: 300,
       headless: false,
