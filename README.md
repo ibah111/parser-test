@@ -1,3 +1,7 @@
+# Parser Test cli/server application
+
+## Предварительно установите nodejs
+
 ```bash
 # Установка yarn
 $ npm i -g yarn
