@@ -11,11 +11,8 @@ import { writeFileSync } from 'fs';
 })
 export default class KatalogCommand extends CommandRunner {
   private folder: string = 'folder';
-  private second_dialog_selector = '#e6ckYWaRNCn2';
   private katalog_link: string =
     'https://www.vprok.ru/catalog/7382/pomidory-i-ovoschnye-nabory';
-  // private katalog_link: string =
-  //   'https://www.browserless.io/blog/json-responses-with-puppeteer-and-playwright';
   constructor(private readonly httpModule: HttpService) {
     super();
   }
