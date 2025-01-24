@@ -1,0 +1,29 @@
+FROM node:18-buster
+
+RUN corepack enable
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    sqlite3 \
+    libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+
+RUN echo "nodeLinker: node-modules" > .yarnrc.yml
+
+WORKDIR /app
+
+COPY package.json yarn.lock ./
+
+RUN  yarn set version berry && yarn install
+
+COPY . .
+
+RUN yarn add sqlite3
+
+RUN yarn build
+
+EXPOSE 3000
+
+CMD ["yarn", "start:dev"]
